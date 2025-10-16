@@ -1,6 +1,24 @@
 import os
+import re
 from pytubefix import YouTube
 import ffmpeg
+
+def sanitize_filename(filename):
+    """
+    Limpia el nombre del archivo eliminando caracteres no permitidos en Windows
+    Caracteres prohibidos: < > : " / \ | ? *
+    """
+    # Reemplazar caracteres prohibidos por guión bajo
+    invalid_chars = r'[<>:"/\\|?*]'
+    sanitized = re.sub(invalid_chars, '_', filename)
+    
+    # Eliminar espacios al inicio y final
+    sanitized = sanitized.strip()
+    
+    # Reemplazar múltiples guiones bajos consecutivos por uno solo
+    sanitized = re.sub(r'_+', '_', sanitized)
+    
+    return sanitized
 
 def get_video_size(stream):
 
@@ -33,7 +51,9 @@ def download_youtube_video(url):
             audio_file = audio_stream.download(output_path='videos', filename_prefix="audio_")
 
             print("Merging video and audio...")
-            output_file = os.path.join('videos', f"{yt.title}.mp4")
+            # Sanitizar el nombre del archivo para evitar caracteres inválidos
+            safe_filename = sanitize_filename(yt.title)
+            output_file = os.path.join('videos', f"{safe_filename}.mp4")
             stream = ffmpeg.input(video_file)
             audio = ffmpeg.input(audio_file)
             stream = ffmpeg.output(stream, audio, output_file, vcodec='libx264', acodec='aac', strict='experimental')

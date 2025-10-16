@@ -13,7 +13,9 @@ if Vid:
     Audio = extractAudio(Vid)
     if Audio:
 
-        transcriptions = transcribeAudio(Audio)
+        # Transcribir con auto-detección de idioma
+        # Puedes cambiar 'auto' por 'es' (español) o 'en' (inglés) si lo prefieres
+        transcriptions = transcribeAudio(Audio, language="auto")
         if len(transcriptions) > 0:
             TransText = ""
 
@@ -21,9 +23,12 @@ if Vid:
                 TransText += (f"{start} - {end}: {text}")
 
             start , stop = GetHighlight(TransText)
-            #handle the case when the highlight starts from 0s
-            if start>0 and stop>0 and stop>start:
-                print(f"Start: {start} , End: {stop}")
+            # Verificar que el highlight sea válido
+            # start puede ser 0 (video comienza desde el inicio)
+            # stop debe ser mayor que start y ambos deben ser >= 0
+            if start >= 0 and stop > 0 and stop > start:
+                print(f"\n✂️  Recortando video: {start}s - {stop}s")
+                print(f"📏 Duración del highlight: {stop-start} segundos")
 
                 Output = "Out.mp4"
 
@@ -33,7 +38,12 @@ if Vid:
                 crop_to_vertical("Out.mp4", croped)
                 combine_videos("Out.mp4", croped, "Final.mp4")
             else:
-                print("Error in getting highlight")
+                print("\n❌ Error: No se pudo obtener un highlight válido")
+                print(f"📊 Valores recibidos: start={start}s, stop={stop}s")
+                print("⚠️  Verifica que:")
+                print("   - La transcripción tenga contenido válido")
+                print("   - El video tenga al menos 10 segundos de duración")
+                print("   - Tu API Key de OpenAI tenga créditos disponibles")
         else:
             print("No transcriptions found")
     else:

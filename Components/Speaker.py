@@ -39,6 +39,8 @@ Frames = [] # [x,y,w,h]
 def detect_faces_and_speakers(input_video_path, output_video_path):
     # Return Frams:
     global Frames
+    print("🎙️ Detectando hablantes en el video...")
+    
     # Extract audio from the video
     extract_audio_from_video(input_video_path, temp_audio_path)
 
@@ -48,16 +50,27 @@ def detect_faces_and_speakers(input_video_path, output_video_path):
         audio_data = wf.readframes(wf.getnframes())
 
     cap = cv2.VideoCapture(input_video_path)
+    total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+    fps = cap.get(cv2.CAP_PROP_FPS)
+    
     fourcc = cv2.VideoWriter_fourcc(*'mp4v')
     out = cv2.VideoWriter(output_video_path, fourcc, 30.0, (int(cap.get(3)), int(cap.get(4))))
 
     frame_duration_ms = 30  # 30ms frames
     audio_generator = process_audio_frame(audio_data, sample_rate, frame_duration_ms)
+    
+    frame_count = 0
 
     while cap.isOpened():
         ret, frame = cap.read()
         if not ret:
             break
+        
+        frame_count += 1
+        # Mostrar progreso cada 30 frames (1 segundo aprox)
+        if frame_count % 30 == 0:
+            progress = (frame_count / total_frames) * 100
+            print(f"⏳ Procesando frames: {frame_count}/{total_frames} ({progress:.1f}%)", end='\r')
 
         h, w = frame.shape[:2]
         blob = cv2.dnn.blobFromImage(cv2.resize(frame, (300, 300)), 1.0, (300, 300), (104.0, 177.0, 123.0))
@@ -101,7 +114,7 @@ def detect_faces_and_speakers(input_video_path, output_video_path):
 
                 # Assuming lips are approximately at the bottom third of the face
                 lip_distance = abs((y + 2 * face_height // 3) - (y1))
-                print(lip_distance)
+                # print(lip_distance)  # Comentado para evitar spam en consola
 
                 # Combine visual and audio cues
                 if lip_distance >= MaxDif and is_speaking_audio:  # Adjust the threshold as needed
@@ -119,15 +132,19 @@ def detect_faces_and_speakers(input_video_path, output_video_path):
                 Frames.append(None)
 
         out.write(frame)
-        cv2.imshow('Frame', frame)
-
-        if cv2.waitKey(1) & 0xFF == ord('q'):
-            break
+        # cv2.imshow('Frame', frame)  # Comentado: no mostrar ventana de preview
+        # if cv2.waitKey(1) & 0xFF == ord('q'):
+        #     break
 
     cap.release()
     out.release()
     cv2.destroyAllWindows()
-    os.remove(temp_audio_path)
+    
+    print(f"\n✅ Detección completada: {len(Frames)} frames procesados")
+    
+    # Limpiar archivo temporal
+    if os.path.exists(temp_audio_path):
+        os.remove(temp_audio_path)
 
 
 
