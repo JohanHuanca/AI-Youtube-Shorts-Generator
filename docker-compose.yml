@@ -1,0 +1,24 @@
+version: '3.8'
+
+services:
+  shorts-generator:
+    # Construye la imagen a partir del Dockerfile en el directorio actual
+    build: .
+    
+    # Nombre para el contenedor para fácil identificación
+    container_name: shorts_generator
+    
+    # Carga las variables de entorno desde el archivo .env
+    env_file:
+      - .env
+      
+    # Monta el directorio actual en el directorio /app del contenedor.
+    # Esto permite que los shorts generados aparezcan en tu carpeta local.
+    volumes:
+      - ./:/app
+      
+    # Mantiene el input de la terminal abierto para que puedas pegar la URL de YouTube
+    stdin_open: true
+    
+    # Asigna un seudo-TTY para la interacción
+    tty: true
